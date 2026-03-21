@@ -1,0 +1,9 @@
+*.pth
+*.npy
+*.index
+*.ckpt
+*.safetensors
+logs/**/*.npy
+logs/**/*.pth
+logs/**/*.index
+logs/**/events.out.tfevents.*
