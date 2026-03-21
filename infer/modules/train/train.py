@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import glob
 
 logger = logging.getLogger(__name__)
 
@@ -296,8 +297,20 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
             )
         scheduler_g.step()
         scheduler_d.step()
+def cleanup_old_checkpoints(model_dir, keep=2):
+    g_files = sorted(glob.glob(os.path.join(model_dir, "G_*.pth")), key=os.path.getmtime)
+    d_files = sorted(glob.glob(os.path.join(model_dir, "D_*.pth")), key=os.path.getmtime)
 
+    # 超過保留數量就刪最舊的
+    while len(g_files) > keep:
+        old_g = g_files.pop(0)
+        print(f"🗑️ 刪除 {old_g}")
+        os.remove(old_g)
 
+    while len(d_files) > keep:
+        old_d = d_files.pop(0)
+        print(f"🗑️ 刪除 {old_d}")
+        os.remove(old_d)
 def train_and_evaluate(
     rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache
 ):
@@ -593,6 +606,7 @@ def train_and_evaluate(
                 epoch,
                 os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
             )
+            cleanup_old_checkpoints(hps.model_dir, keep=2)
         else:
             utils.save_checkpoint(
                 net_g,
