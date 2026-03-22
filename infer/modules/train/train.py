@@ -297,6 +297,13 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
             )
         scheduler_g.step()
         scheduler_d.step()
+        
+def keep_latest_weight(weights_dir, name):
+    files = sorted(glob.glob(f"{weights_dir}/{name}_e*.pth"))
+    for f in files[:-1]:  # 保留最後一個，刪其他
+        os.remove(f)
+        print(f"Deleted: {f}")
+
 def cleanup_old_checkpoints(model_dir, keep=2):
     g_files = sorted(glob.glob(os.path.join(model_dir, "G_*.pth")), key=os.path.getmtime)
     d_files = sorted(glob.glob(os.path.join(model_dir, "D_*.pth")), key=os.path.getmtime)
@@ -607,6 +614,7 @@ def train_and_evaluate(
                 os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
             )
             cleanup_old_checkpoints(hps.model_dir, keep=2)
+            keep_latest_weight('weights', 'mi-test')
         else:
             utils.save_checkpoint(
                 net_g,
